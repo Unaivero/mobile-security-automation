@@ -1,0 +1,233 @@
+{
+  "testUsers": {
+    "legitimate": {
+      "username": "legit_user_001",
+      "password": "SecurePass123!",
+      "email": "legitimate@testdomain.com",
+      "profile": {
+        "accountAge": 365,
+        "riskScore": 0.1,
+        "verificationLevel": "full"
+      }
+    },
+    "suspicious": {
+      "username": "suspect_user_001", 
+      "password": "WeakPass1",
+      "email": "suspicious@tempmail.com",
+      "profile": {
+        "accountAge": 7,
+        "riskScore": 0.7,
+        "verificationLevel": "partial"
+      }
+    }
+  },
+  
+  "maliciousBinaries": [
+    {
+      "name": "fake_su",
+      "path": "/data/local/tmp/fake_su",
+      "content": "#!/bin/sh\necho 'root access granted'\nexit 0",
+      "permissions": "755",
+      "purpose": "Simulate su binary for root detection testing"
+    },
+    {
+      "name": "test_hook",
+      "path": "/data/local/tmp/test_hook.so",
+      "content": "FAKE_SHARED_LIBRARY_FOR_TESTING",
+      "permissions": "644",
+      "purpose": "Simulate hooking framework library"
+    }
+  ],
+  
+  "configurationFiles": [
+    {
+      "name": "security_config",
+      "path": "/data/local/tmp/security.conf",
+      "originalContent": "debug_mode=false\nsecurity_level=high\nroot_detection=enabled\n",
+      "tamperedContent": "debug_mode=true\nsecurity_level=low\nroot_detection=disabled\n",
+      "format": "properties"
+    },
+    {
+      "name": "app_settings",
+      "path": "/data/local/tmp/settings.json",
+      "originalContent": "{\"security\":{\"enabled\":true,\"level\":\"high\"},\"debug\":false}",
+      "tamperedContent": "{\"security\":{\"enabled\":false,\"level\":\"low\"},\"debug\":true}",
+      "format": "json"
+    }
+  ],
+  
+  "networkConfigurations": {
+    "suspicious_proxy": {
+      "http_proxy": "proxy.suspicious.com:8080",
+      "https_proxy": "proxy.suspicious.com:8443",
+      "no_proxy": "localhost,127.0.0.1",
+      "risk_level": "high"
+    },
+    "corporate_proxy": {
+      "http_proxy": "corporate-proxy.internal:3128",
+      "https_proxy": "corporate-proxy.internal:3128", 
+      "no_proxy": "*.internal,localhost",
+      "risk_level": "medium"
+    }
+  },
+  
+  "emulatorProperties": {
+    "android_sdk": {
+      "ro.build.fingerprint": "generic/sdk_gphone_x86/generic_x86:11/RSR1.201211.001/6953398:user/release-keys",
+      "ro.build.model": "Android SDK built for x86",
+      "ro.build.product": "sdk_gphone_x86",
+      "ro.hardware": "goldfish",
+      "ro.kernel.qemu": "1",
+      "ro.product.device": "generic_x86",
+      "ro.serialno": "emulator-5554"
+    },
+    "genymotion": {
+      "ro.build.fingerprint": "generic/vbox86p/vbox86p:7.1.1/NMF26Q/1:user/release-keys",
+      "ro.build.model": "Genymotion",
+      "ro.build.product": "vbox86p", 
+      "ro.hardware": "vbox86",
+      "ro.product.device": "vbox86p",
+      "ro.serialno": "0123456789ABCDEF"
+    }
+  },
+  
+  "rootIndicators": {
+    "common_paths": [
+      "/system/bin/su",
+      "/system/xbin/su",
+      "/sbin/su",
+      "/system/app/Superuser.apk",
+      "/system/app/SuperSU.apk"
+    ],
+    "root_packages": [
+      "com.noshufou.android.su",
+      "com.thirdparty.superuser",
+      "eu.chainfire.supersu",
+      "com.koushikdutta.superuser",
+      "com.topjohnwu.magisk"
+    ],
+    "dangerous_props": {
+      "ro.debuggable": "1",
+      "ro.secure": "0",
+      "service.adb.root": "1"
+    }
+  },
+  
+  "securityThresholds": {
+    "emulator_detection": {
+      "confidence_threshold": 0.7,
+      "max_allowed_indicators": 3
+    },
+    "root_detection": {
+      "confidence_threshold": 0.5,
+      "max_allowed_indicators": 1
+    },
+    "file_integrity": {
+      "checksum_mismatch_tolerance": 0,
+      "monitoring_interval": 5000
+    }
+  },
+  
+  "testEnvironments": {
+    "development": {
+      "allow_emulators": true,
+      "allow_rooted_devices": false,
+      "security_level": "relaxed",
+      "debug_mode": true
+    },
+    "staging": {
+      "allow_emulators": true,
+      "allow_rooted_devices": false,
+      "security_level": "standard",
+      "debug_mode": false
+    },
+    "production": {
+      "allow_emulators": false,
+      "allow_rooted_devices": false,
+      "security_level": "strict",
+      "debug_mode": false
+    }
+  },
+  
+  "expectedBehaviors": {
+    "emulator_on_emulator": {
+      "detection_result": true,
+      "app_action": "warn_or_block",
+      "ui_warning": true,
+      "log_entry": true
+    },
+    "emulator_on_physical": {
+      "detection_result": false,
+      "app_action": "allow",
+      "ui_warning": false,
+      "log_entry": false
+    },
+    "root_on_rooted": {
+      "detection_result": true,
+      "app_action": "block",
+      "ui_warning": true,
+      "log_entry": true
+    },
+    "tampering_detected": {
+      "detection_result": true,
+      "app_action": "warn_or_block",
+      "ui_warning": true,
+      "log_entry": true,
+      "file_restored": false
+    }
+  },
+  
+  "maliciousPayloads": [
+    {
+      "name": "config_injection",
+      "content": "# Malicious configuration\nadmin_access=true\nbypass_security=enabled\n",
+      "target_files": ["*.conf", "*.properties"],
+      "risk_level": "high"
+    },
+    {
+      "name": "script_injection", 
+      "content": "#!/bin/sh\n# Malicious script\nrm -rf /data/local/tmp/*\necho 'System compromised'\n",
+      "target_files": ["*.sh", "*.bash"],
+      "risk_level": "critical"
+    },
+    {
+      "name": "json_injection",
+      "content": "\",\"malicious\":true,\"backdoor\":\"enabled\"",
+      "target_files": ["*.json"],
+      "risk_level": "medium"
+    }
+  ],
+  
+  "complianceChecks": {
+    "owasp_masvs": {
+      "MASVS-STORAGE": ["file_integrity", "backup_protection"],
+      "MASVS-CRYPTO": ["certificate_pinning", "encryption_validation"],
+      "MASVS-AUTH": ["root_detection", "emulator_detection"],
+      "MASVS-NETWORK": ["proxy_detection", "vpn_detection"],
+      "MASVS-PLATFORM": ["debug_detection", "hook_detection"],
+      "MASVS-CODE": ["tampering_detection", "signature_validation"],
+      "MASVS-RESILIENCE": ["anti_debugging", "obfuscation_check"]
+    }
+  },
+  
+  "reportingTemplates": {
+    "security_finding": {
+      "severity": "high|medium|low",
+      "category": "emulator|root|tampering|network",
+      "description": "Detailed description of the security finding",
+      "impact": "Potential impact on application security",
+      "recommendation": "Recommended remediation steps",
+      "evidence": ["screenshots", "logs", "system_info"],
+      "timestamp": "ISO 8601 timestamp"
+    },
+    "test_summary": {
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 0,
+      "security_issues": [],
+      "risk_score": 0,
+      "compliance_status": "compliant|non_compliant",
+      "recommendations": []
+    }
+  }
+}
